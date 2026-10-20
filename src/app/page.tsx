@@ -1,69 +1,133 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState } from "react";
+import { useMotionValue, useSpring, motion, useTransform } from "framer-motion";
+import { useLenis } from "lenis/react";
+import BlackHole, { BlackHoleSectionConfig } from "@/components/organism/BlackHole";
+import SideNavigation from "@/components/molecule/SideNavigation";
+import BottomHUD from "@/components/molecule/BottomHUD";
+import HeroSection from "@/components/organism/sections/HeroSection";
+import EcosystemSection from "@/components/organism/sections/EcosystemSection";
+import KillChainSection from "@/components/organism/sections/KillChainSection";
+import OneCoreSection from "@/components/organism/sections/OneCoreSection";
+import ComparisonSection from "@/components/organism/sections/ComparisonSection";
+import ServicesSection from "@/components/organism/sections/ServicesSection";
+import ExploreSection from "@/components/organism/sections/ExploreSection";
+import EmptyDiveSection from "@/components/organism/sections/EmptyDiveSection";
+import ServicesGridSection from "@/components/organism/sections/simple/ServicesGridSection";
+import NIS2Section from "@/components/organism/sections/simple/NIS2Section";
+import ProcessStepsSection from "@/components/organism/sections/simple/ProcessStepsSection";
+import WhyChooseOrizon from "@/components/organism/sections/simple/WhyChooseOrizon";
+import InsightsSection from "@/components/organism/sections/simple/InsightsSection";
+
+
+const SECTIONS = [
+  { id: "start", label: "START", stage: "01 STAY RESILIENT" },
+  { id: "ecosystem", label: "ECOSYSTEM", stage: "02 WELCOME TO ORION" },
+  { id: "kill-chain", label: "KILL CHAIN", stage: "03 DEFENSE PROTOCOLS" },
+  { id: "one-core", label: "ONE CORE", stage: "04 CENTRAL NEXUS" },
+  { id: "compare", label: "COMPARE", stage: "05 THE COMPARISON" }, 
+  { id: "services", label: "SERVICES", stage: "06 DEPLOYMENT" },   
+  { id: "explore", label: "EXPLORE", stage: "07 THE ECOSYSTEM" },
+  { id: "dive", label: "DIVE", stage: "08 DEEP DIVE" },
+];
 
 export default function Home() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const smoothProgress = useMotionValue(0);
+  
+  useLenis(({ scroll }) => {
+    const windowHeight = typeof window !== "undefined" ? window.innerHeight : 1;
+    const scrollMultiplier = 10; 
+    const maxScrollDist = windowHeight * scrollMultiplier; 
+    const normalizedProgress = Math.min(scroll / maxScrollDist, 1);
+    smoothProgress.set(normalizedProgress);
+    
+    // UI updates only for the fixed scroll track
+    const index = Math.min(Math.floor(scroll / (maxScrollDist / SECTIONS.length)), SECTIONS.length - 1);
+    if (index !== activeIndex) setActiveIndex(index);
+  });
+
+  const springProgress = useSpring(smoothProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  const progressValue = activeIndex / (SECTIONS.length - 1);
+
+  // This controls when the fixed sections fade out to reveal the static content below
+  // It fades from 0.90 to 0.95 progress (near the end of the scroll track)
+  const fixedSectionsOpacity = useTransform(springProgress, [0.90, 0.95, 1], [1, 1, 0]);
+
+  const blackHoleConfig: BlackHoleSectionConfig[] = [
+    { section: 0, position: "center", preserveSize: true }, 
+    { section: 1, position: "center", minScale: 0.8, maxScale: 1.2 }, 
+    { section: 2, position: "center", scale: 0.9 }, 
+    { section: 3, position: "top-right", minScale: 1.2, maxScale: 1.2 }, 
+    { section: 4, position: "center", minScale: 1.0, maxScale: 1.3 }, 
+    { section: 5, position: "center-left", minScale: 1, maxScale: 1 },
+    { section: 6, position: "center", minScale: 1.0, maxScale: 1.0 },
+    { section: 7, position: "center", minScale: 1.0, maxScale: 1.6 },
+  ];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="relative w-full bg-[#050505]">
+      
+      {/* --- FIXED SCROLL SECTIONS (z-50 to z-0) --- */}
+      {/* Wrapped in a motion.div that fades out as we approach the end of the scroll track */}
+      <motion.div style={{ opacity: fixedSectionsOpacity }} className="fixed inset-0 z-50 pointer-events-none">
+        
+        <BlackHole scrollProgress={springProgress} sections={blackHoleConfig} />
+
+        <div className="absolute inset-0 flex items-center justify-center">
+          <HeroSection scrollProgress={springProgress} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <EcosystemSection scrollProgress={springProgress} />
         </div>
-      </main>
-    </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <KillChainSection scrollProgress={springProgress} />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <OneCoreSection scrollProgress={springProgress} />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ComparisonSection scrollProgress={springProgress} />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ServicesSection scrollProgress={springProgress} />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ExploreSection scrollProgress={springProgress} />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <EmptyDiveSection />
+        </div>
+
+      </motion.div>
+
+      {/* --- UI OVERLAYS (z-100) --- */}
+      <div className="fixed inset-0 z-[100] pointer-events-none">
+        <SideNavigation sections={SECTIONS} activeIndex={activeIndex} />
+        <BottomHUD stageText={SECTIONS[activeIndex].stage} progressValue={progressValue} />
+      </div>
+
+      {/* 
+        --- SCROLL SPACER (Height for the fixed sections) ---
+        This block takes up the physical scroll space for the 8 fixed sections.
+        It must be tall enough to let the black hole complete its animation.
+      */}
+      <div className="h-[1000vh] pointer-events-none" />
+
+      {/* 
+        --- STATIC CONTENT SECTIONS (z-10) ---
+        These appear AFTER the fixed sections fade out.
+        They sit in normal document flow, so they naturally scroll up.
+      */}
+      <div className="relative z-10 bg-[#050505]">
+        <NIS2Section />
+        <ServicesGridSection />
+        <WhyChooseOrizon />
+        <ProcessStepsSection />
+        <InsightsSection />
+      </div>
+
+    </main>
   );
 }

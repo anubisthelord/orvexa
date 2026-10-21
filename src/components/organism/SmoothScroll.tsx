@@ -7,9 +7,9 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
     <ReactLenis 
       root 
       options={{ 
-        lerp: 0.08, // Keep your smoothness
+        lerp: 0.05, // Lower means smoother/heavier (0.05 is buttery)
         smoothWheel: true,
-        // Let Lenis handle its own requestAnimationFrame natively
+        syncTouch: true, // Helps smooth out trackpad gestures
       }}
     >
       {children}

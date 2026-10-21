@@ -9,10 +9,16 @@ interface EcosystemSectionProps {
 }
 
 export default function EcosystemSection({ scrollProgress }: EcosystemSectionProps) {
-  // Fades IN from 0.10 -> 0.20
-  // Fades OUT from 0.28 -> 0.30
-  const opacity = useTransform(scrollProgress, [0.10, 0.20, 0.28, 0.30], [0, 1, 1, 0]);
-  const y = useTransform(scrollProgress, [0.10, 0.20, 0.28, 0.30], [50, 0, 0, -50]);
+  // Fades IN earlier (0.08) to overlap with the Hero fading out
+  // Holds at 1 from 0.13 to 0.22
+  const opacity = useTransform(scrollProgress, [0.08, 0.13, 0.22, 0.25], [0, 1, 1, 0]);
+  const y = useTransform(scrollProgress, [0.08, 0.13, 0.22, 0.25], [80, 0, 0, -80]);
+
+  const cardOpacity2 = useTransform(scrollProgress, [0.09, 0.14, 0.22, 0.25], [0, 1, 1, 0]);
+  const cardOpacity3 = useTransform(scrollProgress, [0.10, 0.15, 0.22, 0.25], [0, 1, 1, 0]);
+  const cardOpacity4 = useTransform(scrollProgress, [0.11, 0.16, 0.22, 0.25], [0, 1, 1, 0]);
+
+  const cardOpacities = [opacity, cardOpacity2, cardOpacity3, cardOpacity4];
 
   const cards = [
     {
@@ -51,24 +57,28 @@ export default function EcosystemSection({ scrollProgress }: EcosystemSectionPro
 
   return (
     <motion.div
-      style={{ opacity, y }}
+      style={{ 
+        opacity, 
+        y, 
+        willChange: "transform, opacity" // <--- CRITICAL FOR SMOOTHNESS
+      }}
       className="absolute inset-0 w-full h-full pointer-events-none z-10"
     >
-      {/* Top Center Subtitle */}
-      <div className="absolute top-[15%] left-1/2 -translate-x-1/2 flex items-center gap-4 text-green-500 font-mono text-[10px] tracking-[0.3em] uppercase opacity-90 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]">
+      <div className="absolute top-[15%] left-1/2 -translate-x-1/2 flex items-center gap-4 text-green-500 font-medium uppercase opacity-90 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]">
         <span className="w-8 h-[1px] bg-green-500/50" />
         European Cybersecurity Ecosystem
         <span className="w-8 h-[1px] bg-green-500/50" />
       </div>
 
-      {/* Floating Cards */}
       {cards.map((card, i) => (
-        <div
+        <motion.div
           key={i}
-          // pointer-events-auto allows hover, and we do NOT clip this wrapper
+          style={{ 
+            opacity: cardOpacities[i],
+            willChange: "transform, opacity" // <--- CRITICAL FOR PIXEL CARD SMOOTHNESS
+          }}
           className={`absolute ${card.position} w-[290px] h-[150px] pointer-events-auto group`}
         >
-          {/* We pass the clipPath directly to the PixelCard via inline style */}
           <PixelCard
             theme="dark"
             colors={["#55ff55", "#44dd44"]}
@@ -83,10 +93,7 @@ export default function EcosystemSection({ scrollProgress }: EcosystemSectionPro
             className="w-full h-full !rounded-xl !shadow-none !bg-[#0a0a0a]/50 border border-white/10"
             style={{ clipPath: card.clipPath }}
           >
-            {/* SIMPLE CONTENT LAYOUT */}
-            <div className={`absolute inset-0  flex flex-col justify-center p-5 z-10 w-full ${card.align === "right" ? "items-end text-right magical-border-right" : "magical-border-left items-start text-left"}`}>
-              
-              {/* Header Row (Number & Title) */}
+            <div className={`absolute inset-0 flex flex-col justify-center p-5 z-10 w-full ${card.align === "right" ? "items-end text-right magical-border-right" : "magical-border-left items-start text-left"}`}>
               <div className={`flex items-center gap-1.5`}>
                 <span className="text-[#44dd44] text-xl !font-semibold tracking-widest">
                   {card.num}:
@@ -95,18 +102,14 @@ export default function EcosystemSection({ scrollProgress }: EcosystemSectionPro
                   {card.title}
                 </h3>
               </div>
-
-              {/* Paragraph Description */}
-              <p className="  text-sm !leading-snug">
+              <p className="text-sm !leading-snug">
                 {card.desc}
               </p>
-
             </div>
           </PixelCard>
-        </div>
+        </motion.div>
       ))}
 
-      {/* Bottom Center Text */}
       <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-full max-w-2xl text-center pointer-events-auto">
         <h3 className="text-white !text-4xl">
           See every threat. Prove every<br />

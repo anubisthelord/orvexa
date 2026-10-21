@@ -9,81 +9,62 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ scrollProgress }: HeroSectionProps) {
-  const opacity = useTransform(scrollProgress, [0, 0.2], [1, 0]);
-  const y = useTransform(scrollProgress, [0, 0.2], [0, -50]);
+  const opacity = useTransform(scrollProgress, [0, 0.10, 0.125], [1, 1, 0]);
+  const y = useTransform(scrollProgress, [0, 0.125], ["0vh", "-120vh"]);
 
   return (
     <motion.div 
-      style={{ opacity, y }}
-      // Removed backdrop-blur and overflow-hidden from the main wrapper
+      style={{ opacity, y, willChange: "transform, opacity" }}
       className="relative w-fit h-fit flex flex-col items-center justify-center text-center md:px-12"
     >
-      
-      {/* 
-        THE FIX: Soft Radial Background Haze 
-        This creates a circular, soft dark fade behind the text instead of a boxy blur.
-      */}
       <div 
         className="absolute inset-0 -z-10 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 40%, transparent 70%)',
-          filter: 'blur(30px)', // Blurs the gradient itself for a smooth transition
-          transform: 'scale(1.2)', // Pushes the edges further out so no hard lines appear
+          background: 'radial-gradient(circle at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, transparent 70%)',
+          filter: 'blur(30px)',
+          transform: 'scale(1.2)',
         }}
       />
 
-      {/* Top Subtitle */}
       <div className="relative z-10 mb-2 flex items-center gap-4 px-4 border-b border-dashed text-[#55FF55] font-mono text-sm font-bold backdrop-blur-sm rounded-full uppercase opacity-90">
         Advanced Deep Space Systems
       </div>
 
-      {/* Main Headings with 3D Black Outer Edge Effect */}
-      <h1 
-        className="relative z-10 text-5xl md:text-7xl font-sans tracking-tight text-white leading-[1.05] mb-5"
-        style={{
-          textShadow: `
-            -1px -1px 0px rgba(255,255,255,0.8), 
-            2px 2px 0px #000, 
-            4px 4px 6px rgba(0,0,0,0.9)
-          `
-        }}
-      >
-        Explore. Navigate.<br />
-        Reach the <span className="text-[#55ff55] relative inline-block" style={{
-          textShadow: `
-            -1px -1px 0px rgba(255,255,255,0.8), 
-            2px 2px 0px #000, 
-            4px 4px 6px rgba(0,0,0,0.9)
-          `
-        }}>
-          Horizon.
-          {/* Green Underline */}
-          <svg className="absolute -bottom-2 left-0 w-full h-3 text-green-500" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            <path d="M2 10C50 2 150 2 198 10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-          </svg>
+      {/* CLEAN 3D GLASS TEXT EFFECT */}
+      <h1 className="relative z-10 text-5xl md:!text-7xl font-sans tracking-tight !font-normal  mb-5 flex flex-col items-center gap-2">
+        
+        {/* Line 1 */}
+        <span
+          className="inline-block text-transparent bg-clip-text bg-gradient-to-b from-white via-white/80 to-white/20"
+          style={{
+            WebkitTextStroke: "2px rgba(255,255,255,0.2)",
+            filter: "drop-shadow(0px 4px 0px rgba(255,255,255,0.1)) drop-shadow(0px 10px 20px rgba(0,0,0,0.9)) drop-shadow(0px 0px 40px rgba(255,255,255,0.2))",
+          }}
+        >
+          Discover. Protect.
+        </span>
+
+        {/* Line 2 */}
+        <span
+          className="inline-block text-transparent bg-clip-text bg-gradient-to-b from-[#d4ffb0] via-[#55ff55] to-[#1a6b1a]"
+          style={{
+            WebkitTextStroke: "2px rgba(182,255,122,0.3)",
+            filter: "drop-shadow(0px 4px 0px rgba(85,255,85,0.1)) drop-shadow(0px 10px 20px rgba(0,0,0,0.9)) drop-shadow(0px 0px 40px rgba(85,255,85,0.4))",
+          }}
+        >
+          Stay Resilient.
         </span>
       </h1>
 
-      {/* Subdescription */}
-      <p className="relative z-10 max-w-3xl text-gray-300 text-sm md:text-lg !leading-snug mb-10 drop-shadow-md">
-        Six integrated orbital technologies working in unison to chart unknown sectors, 
-        monitor stellar phenomena, power deep space telemetry, and secure your mission.
+      <p className="relative z-10 max-w-3xl !text-gray-300 text-sm md:text-lg !leading-snug mb-10 drop-shadow-md">
+        Six integrated services that work together to protect your attack surface, 
+        detect threats, monitor the dark web, empower your team, and keep you compliant.
       </p>
 
-      {/* Call to Action Buttons */}
       <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4">
-       
-
-        <Button variant="primary" size="md" >
-        Launch Mission
-        </Button>
-
-        <Button variant="secondary" size="md" className="backdrop-blur-sm" >
-        Contact Mission Control
-        </Button>
-      
+        <Button variant="primary" size="md">Explore Services ↗</Button>
+        <Button variant="secondary" size="md" className="backdrop-blur-sm">Talk to Our Team</Button>
       </div>
-
     </motion.div>
   );
 }

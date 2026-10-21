@@ -26,12 +26,11 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
       powerPreference: "high-performance"
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    // Capped at 1.5 to save GPU memory and prevent scroll stutter on Retina screens
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
     mount.appendChild(renderer.domElement);
 
     // --- LAYER 1: Dense Background Stars ---
-    const bgStarsCount = 8000; 
+    const bgStarsCount = 16000; 
     const bgGeometry = new THREE.BufferGeometry();
     const bgPositions = new Float32Array(bgStarsCount * 3);
     const bgColors = new Float32Array(bgStarsCount * 3);
@@ -51,7 +50,7 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
       bgColors[i * 3] = color.r;
       bgColors[i * 3 + 1] = color.g;
       bgColors[i * 3 + 2] = color.b;
-      bgSizes[i] = Math.random() * 1.5 + 0.8;
+      bgSizes[i] = Math.random() * 0.8 + 0.4;
     }
 
     bgGeometry.setAttribute('position', new THREE.BufferAttribute(bgPositions, 3));
@@ -102,12 +101,29 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
     debrisGeometry.setAttribute('size', new THREE.BufferAttribute(debrisSizes, 1));
 
     // --- SHADERS ---
+    // A shared uniform for darkening the bottom-center region.
+    // darkenCenter: 0..1, how much darker the center of the dark zone is (1.0 = fully black, 0.0 = untouched)
+    // darkenRadius: 0..1, radius of the dark zone in normalized screen space (0..1)
+    // darkenY:     0..1, vertical center of the dark zone (0 = bottom, 1 = top)
+    // darkenX:     0..1, horizontal center of the dark zone (0 = left, 1 = right)
+    const darkenUniforms = {
+      darkenCenter: { value: 0.8 },   // 80% darker
+      darkenRadius: { value: 0.55 },  // size of the dark spot
+      darkenX:      { value: 0.5 },   // centered horizontally
+      darkenY:      { value: 0.15 },  // near the bottom
+    };
+
     const starMaterial = new THREE.ShaderMaterial({
-      uniforms: { time: { value: 0 }, pixelRatio: { value: renderer.getPixelRatio() } },
+      uniforms: { 
+        time: { value: 0 }, 
+        pixelRatio: { value: renderer.getPixelRatio() },
+        ...darkenUniforms,
+      },
       vertexShader: `
         attribute float size;
         attribute vec3 color;
         varying vec3 vColor;
+        varying vec2 vScreenPos;
         uniform float time;
         uniform float pixelRatio;
         void main() {
@@ -116,16 +132,29 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
           float twinkle = sin(time * 1.5 + position.x * 5.0) * 0.4 + 0.6;
           gl_PointSize = size * twinkle * pixelRatio * (200.0 / -mvPosition.z);
           gl_Position = projectionMatrix * mvPosition;
+          // Screen-space (0..1) position for dark-zone masking
+          vScreenPos = (gl_Position.xy / gl_Position.w) * 0.5 + 0.5;
         }
       `,
       fragmentShader: `
         varying vec3 vColor;
+        varying vec2 vScreenPos;
+        uniform float darkenCenter;
+        uniform float darkenRadius;
+        uniform float darkenX;
+        uniform float darkenY;
         void main() {
           vec2 uv = gl_PointCoord.xy;
           float d = distance(uv, vec2(0.5));
           if (d > 0.5) discard;
           float alpha = 1.0 - smoothstep(0.3, 0.5, d);
-          gl_FragColor = vec4(vColor, alpha);
+
+          // Dark zone: radial falloff from (darkenX, darkenY)
+          float dist = distance(vScreenPos, vec2(darkenX, darkenY));
+          float mask = smoothstep(darkenRadius, 0.0, dist); // 1 at center, 0 outside
+          float darkness = 1.0 - mask * darkenCenter;       // 1 = untouched, (1-darkenCenter) = fully dark
+
+          gl_FragColor = vec4(vColor, alpha * darkness);
         }
       `,
       transparent: true,
@@ -134,11 +163,16 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
     });
 
     const debrisMaterial = new THREE.ShaderMaterial({
-      uniforms: { time: { value: 0 }, pixelRatio: { value: renderer.getPixelRatio() } },
+      uniforms: { 
+        time: { value: 0 }, 
+        pixelRatio: { value: renderer.getPixelRatio() },
+        ...darkenUniforms,
+      },
       vertexShader: `
         attribute float size;
         attribute vec3 color;
         varying vec3 vColor;
+        varying vec2 vScreenPos;
         uniform float time;
         uniform float pixelRatio;
         void main() {
@@ -146,16 +180,27 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
           gl_PointSize = size * pixelRatio * (150.0 / -mvPosition.z);
           gl_Position = projectionMatrix * mvPosition;
+          vScreenPos = (gl_Position.xy / gl_Position.w) * 0.5 + 0.5;
         }
       `,
       fragmentShader: `
         varying vec3 vColor;
+        varying vec2 vScreenPos;
+        uniform float darkenCenter;
+        uniform float darkenRadius;
+        uniform float darkenX;
+        uniform float darkenY;
         void main() {
           vec2 uv = gl_PointCoord.xy;
           float edgeX = smoothstep(0.0, 0.15, uv.x) - smoothstep(0.85, 1.0, uv.x);
           float edgeY = smoothstep(0.0, 0.15, uv.y) - smoothstep(0.85, 1.0, uv.y);
           float alpha = edgeX * edgeY;
-          gl_FragColor = vec4(vColor, alpha * 0.15);
+
+          float dist = distance(vScreenPos, vec2(darkenX, darkenY));
+          float mask = smoothstep(darkenRadius, 0.0, dist);
+          float darkness = 1.0 - mask * darkenCenter;
+
+          gl_FragColor = vec4(vColor, alpha * 0.15 * darkness);
         }
       `,
       transparent: true,
@@ -178,7 +223,6 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
     const animate = (currentTime: number) => {
       animationFrameId = requestAnimationFrame(animate);
       
-      // THROTTLE: Skip rendering if it's happening too fast (fixes high-refresh rate jank)
       const deltaTime = currentTime - lastTime;
       if (deltaTime < interval) return;
       lastTime = currentTime - (deltaTime % interval);
@@ -226,7 +270,7 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
     };
   }, []);
 
-  // 7. Direct DOM styling for opacity (Bypasses React rendering completely)
+  // 7. Direct DOM styling for opacity
   const handleMount = (node: HTMLDivElement | null) => {
     mountRef.current = node;
     if (node && opacity) {

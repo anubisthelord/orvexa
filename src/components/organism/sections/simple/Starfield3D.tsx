@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { motion, MotionValue } from 'framer-motion';
+import { MotionValue } from 'framer-motion';
 
 interface Starfield3DProps {
   opacity: MotionValue<number>;
@@ -26,6 +26,7 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
       powerPreference: "high-performance"
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    // Capped at 1.5 to save GPU memory and prevent scroll stutter on Retina screens
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
     mount.appendChild(renderer.domElement);
 
@@ -73,31 +74,26 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
       debrisPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.5; 
       debrisPositions[i * 3 + 2] = radius * Math.cos(phi);
 
-      // Grey/White/Green tints
       const rand = Math.random();
       if (rand > 0.8) {
-        color.setRGB(0.6, 1.0, 0.6); // Energy green
+        color.setRGB(0.6, 1.0, 0.6); 
       } else if (rand > 0.6) {
-        color.setRGB(0.7, 0.7, 0.7); // Dark rock
+        color.setRGB(0.7, 0.7, 0.7); 
       } else {
-        color.setRGB(1.0, 1.0, 1.0); // Bright dust
+        color.setRGB(1.0, 1.0, 1.0); 
       }
       
       debrisColors[i * 3] = color.r;
       debrisColors[i * 3 + 1] = color.g;
       debrisColors[i * 3 + 2] = color.b;
       
-      // SIZES REDUCED BY AN ADDITIONAL 2.5x
       const sizeRand = Math.random();
       if (sizeRand > 0.9) {
-        // Was 2.66 - 6.66, now 1.06 - 2.66
-        debrisSizes[i] = Math.random() * 1.6 + 1.06; // Large chunks
+        debrisSizes[i] = Math.random() * 1.6 + 1.06; 
       } else if (sizeRand > 0.6) {
-        // Was 1.33 - 3.33, now 0.53 - 1.33
-        debrisSizes[i] = Math.random() * 0.8 + 0.53; // Medium chunks
+        debrisSizes[i] = Math.random() * 0.8 + 0.53; 
       } else {
-        // Was 0.66 - 1.66, now 0.26 - 0.66
-        debrisSizes[i] = Math.random() * 0.4 + 0.26; // Small dust
+        debrisSizes[i] = Math.random() * 0.4 + 0.26; 
       }
     }
 
@@ -106,7 +102,6 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
     debrisGeometry.setAttribute('size', new THREE.BufferAttribute(debrisSizes, 1));
 
     // --- SHADERS ---
-
     const starMaterial = new THREE.ShaderMaterial({
       uniforms: { time: { value: 0 }, pixelRatio: { value: renderer.getPixelRatio() } },
       vertexShader: `
@@ -149,8 +144,6 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
         void main() {
           vColor = color;
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          
-          // Increased multiplier slightly (100 -> 150) to compensate for the very small base sizes
           gl_PointSize = size * pixelRatio * (150.0 / -mvPosition.z);
           gl_Position = projectionMatrix * mvPosition;
         }
@@ -158,13 +151,10 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
       fragmentShader: `
         varying vec3 vColor;
         void main() {
-          // Perfect square shape
           vec2 uv = gl_PointCoord.xy;
           float edgeX = smoothstep(0.0, 0.15, uv.x) - smoothstep(0.85, 1.0, uv.x);
           float edgeY = smoothstep(0.0, 0.15, uv.y) - smoothstep(0.85, 1.0, uv.y);
           float alpha = edgeX * edgeY;
-          
-          // VERY LOW OPACITY
           gl_FragColor = vec4(vColor, alpha * 0.15);
         }
       `,
@@ -179,12 +169,21 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
     scene.add(bgStars);
     scene.add(planetDebris);
 
-    // 4. Animation Loop
+    // 4. Optimized Animation Loop with FPS Throttling
     let animationFrameId: number;
-    const startTime = performance.now();
-    
-    const animate = () => {
-      const time = (performance.now() - startTime) * 0.001;
+    let lastTime = 0;
+    const fps = 60; 
+    const interval = 1000 / fps;
+
+    const animate = (currentTime: number) => {
+      animationFrameId = requestAnimationFrame(animate);
+      
+      // THROTTLE: Skip rendering if it's happening too fast (fixes high-refresh rate jank)
+      const deltaTime = currentTime - lastTime;
+      if (deltaTime < interval) return;
+      lastTime = currentTime - (deltaTime % interval);
+
+      const time = currentTime * 0.001;
       
       starMaterial.uniforms.time.value = time;
       
@@ -194,9 +193,8 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
       bgStars.rotation.y = time * 0.01;
 
       renderer.render(scene, camera);
-      animationFrameId = requestAnimationFrame(animate);
     };
-    animate();
+    animationFrameId = requestAnimationFrame(animate);
 
     // 5. Resize Handling
     let resizeTimeout: NodeJS.Timeout;
@@ -228,10 +226,19 @@ export default function Starfield3D({ opacity }: Starfield3DProps) {
     };
   }, []);
 
+  // 7. Direct DOM styling for opacity (Bypasses React rendering completely)
+  const handleMount = (node: HTMLDivElement | null) => {
+    mountRef.current = node;
+    if (node && opacity) {
+      opacity.on("change", (latest) => {
+        if (node) node.style.opacity = latest.toString();
+      });
+    }
+  };
+
   return (
-    <motion.div 
-      ref={mountRef} 
-      style={{ opacity }} 
+    <div 
+      ref={handleMount} 
       className="absolute inset-0 pointer-events-none z-0" 
     />
   );

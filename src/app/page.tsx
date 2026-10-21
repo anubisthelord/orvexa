@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import  { useState } from "react";
 import { useMotionValue, useSpring, motion, useTransform } from "framer-motion";
 import { useLenis } from "lenis/react";
 import BlackHole, { BlackHoleSectionConfig } from "@/components/organism/BlackHole";

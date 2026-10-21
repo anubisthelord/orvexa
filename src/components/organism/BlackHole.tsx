@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion, MotionValue, useTransform, useSpring } from "framer-motion";
+import Starfield3D from "./sections/simple/Starfield3D";
 
 export type BlackHolePosition = 
   | "center" 
@@ -11,19 +12,17 @@ export type BlackHolePosition =
 
 export interface BlackHoleSectionConfig {
   section: number; 
-  scale?: number;     // Forces a static scale for the section
-  minScale?: number;  // The minimum size it can shrink to in this section
-  maxScale?: number;  // The maximum size it can grow to in this section
+  scale?: number;     
+  minScale?: number;  
+  maxScale?: number;  
   position?: BlackHolePosition; 
   preserveSize?: boolean; 
-  /** Per-section override: hide the starfield while this section is active. */
   showStars?: boolean;
 }
 
 interface BlackHoleProps {
   scrollProgress: MotionValue<number>;
   sections?: BlackHoleSectionConfig[];
-  /** Global default — set to false to hide stars everywhere. Defaults to true. */
   showStars?: boolean;
 }
 
@@ -38,46 +37,12 @@ const POSITION_MAP: Record<BlackHolePosition, { x: string; y: string }> = {
 };
 
 export default function BlackHole({ scrollProgress, sections = [], showStars = true }: BlackHoleProps) {
-  const [stars, setStars] = useState<
-    Array<{ id: number; top: string; left: string; size: number; delay: string; duration: string; color: string; opacity: number }>
-  >([]);
-
-  useEffect(() => {
-    if (!showStars) {
-      setStars([]);
-      return;
-    }
-
-    const numStars = 600; 
-    const generatedStars = Array.from({ length: numStars }).map((_, i) => {
-      const randomSize = Math.random();
-      let size = 0.5;
-      if (randomSize > 0.8) size = Math.random() * 2 + 1.5; 
-      else if (randomSize > 0.4) size = Math.random() * 1 + 0.8; 
-      else size = Math.random() * 0.5 + 0.3; 
-
-      const colors = ["#ffffff", "#e0f2fe", "#fef08a"];
-      return {
-        id: i,
-        top: `${Math.random() * 100}%`,
-        left: `${Math.random() * 100}%`,
-        size: size,
-        delay: `${Math.random() * 5}s`, 
-        duration: `${Math.random() * 4 + 2}s`, 
-        color: colors[Math.floor(Math.random() * colors.length)],
-        opacity: Math.random() * 0.5 + 0.3, 
-      };
-    });
-    setStars(generatedStars);
-  }, [showStars]);
-
   // 1. BASE SCROLL SCALING
   const baseVideoScale = useTransform(scrollProgress, [0, 0.5], [1.25, 0.8125]);
   const baseRingScale = useTransform(scrollProgress, [0, 0.5], [1, 1.25]);
 
   // 2. DYNAMIC ENGINE
   const totalSections = Math.max(...sections.map(s => s.section), 1) + 1;
-
   const sortedSections = [...sections].sort((a, b) => a.section - b.section);
 
   const inputRange: number[] = [0];
@@ -163,10 +128,10 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
 
   const sectionX = useTransform(scrollProgress, dedupInput, dedupX);
   const sectionY = useTransform(scrollProgress, dedupInput, dedupY);
-  // WITH THIS:
-const rawWrapperScale = useTransform(scrollProgress, dedupInput, dedupScale);
-const finalWrapperScale = useSpring(rawWrapperScale, { stiffness: 80, damping: 20 });  
-  // 🟢 THE FIX: Spring-smoothed opacity for the stars
+  const rawWrapperScale = useTransform(scrollProgress, dedupInput, dedupScale);
+  const finalWrapperScale = useSpring(rawWrapperScale, { stiffness: 80, damping: 20 });  
+  
+  // Spring-smoothed opacity for the stars
   const rawStarsOpacity = useTransform(scrollProgress, dedupInput, dedupStars);
   const starsOpacity = useSpring(rawStarsOpacity, { stiffness: 80, damping: 20 });
 
@@ -180,33 +145,8 @@ const finalWrapperScale = useSpring(rawWrapperScale, { stiffness: 80, damping: 2
   return (
     <div className="fixed top-0 left-0 w-full h-screen overflow-hidden bg-[#050505] z-0">
       
-      {/* STARFIELD */}
-      {showStars && stars.length > 0 && (
-        <motion.div 
-          className="absolute inset-0 pointer-events-none z-0"
-          style={{ opacity: starsOpacity }}
-        >
-          {stars.map((star) => (
-            <div
-              key={star.id}
-              className="absolute rounded-full animate-twinkle"
-              style={{
-                top: star.top,
-                left: star.left,
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                backgroundColor: star.color,
-                "--twinkle-delay": star.delay,
-                "--twinkle-duration": star.duration,
-                animationDelay: `var(--twinkle-delay)`,
-                animationDuration: `var(--twinkle-duration)`,
-                boxShadow: star.size > 1.5 ? `0 0 6px ${star.color}` : "none",
-                opacity: star.opacity,
-              } as React.CSSProperties}
-            />
-          ))}
-        </motion.div>
-      )}
+      {/* NEW THREE.JS STARFIELD */}
+      {showStars && <Starfield3D opacity={starsOpacity} />}
 
       {/* MOVING WRAPPER */}
       <motion.div 

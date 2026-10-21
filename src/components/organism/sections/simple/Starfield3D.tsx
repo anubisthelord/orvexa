@@ -1,0 +1,238 @@
+"use client";
+
+import React, { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { motion, MotionValue } from 'framer-motion';
+
+interface Starfield3DProps {
+  opacity: MotionValue<number>;
+}
+
+export default function Starfield3D({ opacity }: Starfield3DProps) {
+  const mountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    // 1. Scene Setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
+
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      powerPreference: "high-performance"
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
+    mount.appendChild(renderer.domElement);
+
+    // --- LAYER 1: Dense Background Stars ---
+    const bgStarsCount = 8000; 
+    const bgGeometry = new THREE.BufferGeometry();
+    const bgPositions = new Float32Array(bgStarsCount * 3);
+    const bgColors = new Float32Array(bgStarsCount * 3);
+    const bgSizes = new Float32Array(bgStarsCount);
+    const color = new THREE.Color();
+
+    for (let i = 0; i < bgStarsCount; i++) {
+      const radius = 100 + Math.random() * 200; 
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+
+      bgPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      bgPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      bgPositions[i * 3 + 2] = radius * Math.cos(phi);
+
+      color.setHSL(0.6, 0.2, 0.9); 
+      bgColors[i * 3] = color.r;
+      bgColors[i * 3 + 1] = color.g;
+      bgColors[i * 3 + 2] = color.b;
+      bgSizes[i] = Math.random() * 1.5 + 0.8;
+    }
+
+    bgGeometry.setAttribute('position', new THREE.BufferAttribute(bgPositions, 3));
+    bgGeometry.setAttribute('color', new THREE.BufferAttribute(bgColors, 3));
+    bgGeometry.setAttribute('size', new THREE.BufferAttribute(bgSizes, 1));
+
+    // --- LAYER 2: Low Opacity Square Flakes (Tiny) ---
+    const debrisCount = 1200; 
+    const debrisGeometry = new THREE.BufferGeometry();
+    const debrisPositions = new Float32Array(debrisCount * 3);
+    const debrisColors = new Float32Array(debrisCount * 3);
+    const debrisSizes = new Float32Array(debrisCount);
+
+    for (let i = 0; i < debrisCount; i++) {
+      const radius = 15 + Math.random() * 50; 
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+
+      debrisPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      debrisPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.5; 
+      debrisPositions[i * 3 + 2] = radius * Math.cos(phi);
+
+      // Grey/White/Green tints
+      const rand = Math.random();
+      if (rand > 0.8) {
+        color.setRGB(0.6, 1.0, 0.6); // Energy green
+      } else if (rand > 0.6) {
+        color.setRGB(0.7, 0.7, 0.7); // Dark rock
+      } else {
+        color.setRGB(1.0, 1.0, 1.0); // Bright dust
+      }
+      
+      debrisColors[i * 3] = color.r;
+      debrisColors[i * 3 + 1] = color.g;
+      debrisColors[i * 3 + 2] = color.b;
+      
+      // SIZES REDUCED BY AN ADDITIONAL 2.5x
+      const sizeRand = Math.random();
+      if (sizeRand > 0.9) {
+        // Was 2.66 - 6.66, now 1.06 - 2.66
+        debrisSizes[i] = Math.random() * 1.6 + 1.06; // Large chunks
+      } else if (sizeRand > 0.6) {
+        // Was 1.33 - 3.33, now 0.53 - 1.33
+        debrisSizes[i] = Math.random() * 0.8 + 0.53; // Medium chunks
+      } else {
+        // Was 0.66 - 1.66, now 0.26 - 0.66
+        debrisSizes[i] = Math.random() * 0.4 + 0.26; // Small dust
+      }
+    }
+
+    debrisGeometry.setAttribute('position', new THREE.BufferAttribute(debrisPositions, 3));
+    debrisGeometry.setAttribute('color', new THREE.BufferAttribute(debrisColors, 3));
+    debrisGeometry.setAttribute('size', new THREE.BufferAttribute(debrisSizes, 1));
+
+    // --- SHADERS ---
+
+    const starMaterial = new THREE.ShaderMaterial({
+      uniforms: { time: { value: 0 }, pixelRatio: { value: renderer.getPixelRatio() } },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        uniform float time;
+        uniform float pixelRatio;
+        void main() {
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          float twinkle = sin(time * 1.5 + position.x * 5.0) * 0.4 + 0.6;
+          gl_PointSize = size * twinkle * pixelRatio * (200.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          vec2 uv = gl_PointCoord.xy;
+          float d = distance(uv, vec2(0.5));
+          if (d > 0.5) discard;
+          float alpha = 1.0 - smoothstep(0.3, 0.5, d);
+          gl_FragColor = vec4(vColor, alpha);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    const debrisMaterial = new THREE.ShaderMaterial({
+      uniforms: { time: { value: 0 }, pixelRatio: { value: renderer.getPixelRatio() } },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        uniform float time;
+        uniform float pixelRatio;
+        void main() {
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          
+          // Increased multiplier slightly (100 -> 150) to compensate for the very small base sizes
+          gl_PointSize = size * pixelRatio * (150.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          // Perfect square shape
+          vec2 uv = gl_PointCoord.xy;
+          float edgeX = smoothstep(0.0, 0.15, uv.x) - smoothstep(0.85, 1.0, uv.x);
+          float edgeY = smoothstep(0.0, 0.15, uv.y) - smoothstep(0.85, 1.0, uv.y);
+          float alpha = edgeX * edgeY;
+          
+          // VERY LOW OPACITY
+          gl_FragColor = vec4(vColor, alpha * 0.15);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    const bgStars = new THREE.Points(bgGeometry, starMaterial);
+    const planetDebris = new THREE.Points(debrisGeometry, debrisMaterial);
+    
+    scene.add(bgStars);
+    scene.add(planetDebris);
+
+    // 4. Animation Loop
+    let animationFrameId: number;
+    const startTime = performance.now();
+    
+    const animate = () => {
+      const time = (performance.now() - startTime) * 0.001;
+      
+      starMaterial.uniforms.time.value = time;
+      
+      planetDebris.rotation.z = time * 0.03; 
+      planetDebris.rotation.y = time * 0.01;
+      
+      bgStars.rotation.y = time * 0.01;
+
+      renderer.render(scene, camera);
+      animationFrameId = requestAnimationFrame(animate);
+    };
+    animate();
+
+    // 5. Resize Handling
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        starMaterial.uniforms.pixelRatio.value = renderer.getPixelRatio();
+        debrisMaterial.uniforms.pixelRatio.value = renderer.getPixelRatio();
+      }, 100);
+    };
+    window.addEventListener('resize', handleResize);
+
+    // 6. Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout);
+      cancelAnimationFrame(animationFrameId);
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
+      }
+      bgGeometry.dispose();
+      starMaterial.dispose();
+      debrisGeometry.dispose();
+      debrisMaterial.dispose();
+      renderer.dispose();
+    };
+  }, []);
+
+  return (
+    <motion.div 
+      ref={mountRef} 
+      style={{ opacity }} 
+      className="absolute inset-0 pointer-events-none z-0" 
+    />
+  );
+}

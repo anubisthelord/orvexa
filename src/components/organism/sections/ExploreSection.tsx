@@ -2,18 +2,30 @@
 
 import React from "react";
 import { motion, MotionValue, useTransform } from "framer-motion";
+import {
+  FlagUs,
+  FlagEu,
+  FlagIn,
+  FlagJp,
+  FlagCn,
+  FlagRu,
+  FlagCa,
+  FlagGb,
+} from "@sankyu/react-circle-flags";
 
 interface ExploreSectionProps {
   scrollProgress: MotionValue<number>;
 }
 
-const EXPLORE_LINKS = [
-  { id: "services", title: "Services", desc: "All six services", action: "VIEW SERVICES", position: "top-[25%] left-[10%] lg:left-[12%]", align: "left" },
-  { id: "nis2", title: "NIS2 Compliance", desc: "Audit-ready", action: "LEARN MORE", position: "top-[45%] left-[10%] lg:left-[12%]", align: "left" },
-  { id: "compare", title: "Compare", desc: "vs the rest", action: "SEE COMPARISON", position: "top-[65%] left-[10%] lg:left-[12%]", align: "left" },
-  { id: "company", title: "Company", desc: "About Orizon", action: "OUR STORY", position: "top-[25%] right-[10%] lg:right-[12%]", align: "right" },
-  { id: "blog", title: "Blog", desc: "Notes & research", action: "READ LATEST", position: "top-[45%] right-[10%] lg:right-[12%]", align: "right" },
-  { id: "contact", title: "Contact", desc: "Get in touch", action: "CONTACT US", position: "top-[65%] right-[10%] lg:right-[12%]", align: "right" },
+const AGENCIES = [
+  { id: "nasa", title: "NASA", desc: "United States federal space and research agency", Flag: FlagUs },
+  { id: "esa",  title: "ESA",  desc: "Europe's intergovernmental space exploration body", Flag: FlagEu },
+  { id: "isro", title: "ISRO", desc: "India's national space research organization", Flag: FlagIn },
+  { id: "jaxa", title: "JAXA", desc: "Japan's national aerospace and space agency", Flag: FlagJp },
+  { id: "cnsa", title: "CNSA", desc: "China's national space administration agency", Flag: FlagCn },
+  { id: "roscosmos", title: "Roscosmos", desc: "Russia's state space corporation and agency", Flag: FlagRu },
+  { id: "csa",  title: "CSA",  desc: "Canadian space agency for exploration missions", Flag: FlagCa },
+  { id: "uksa", title: "UKSA", desc: "United Kingdom space agency for innovation", Flag: FlagGb },
 ];
 
 export default function ExploreSection({ scrollProgress }: ExploreSectionProps) {
@@ -21,41 +33,63 @@ export default function ExploreSection({ scrollProgress }: ExploreSectionProps) 
   const y = useTransform(scrollProgress, [0.85, 0.90, 1, 1], [50, 0, 0, 0]);
 
   return (
-    <motion.div style={{ opacity, y }} className="absolute inset-0 w-full h-full pointer-events-none z-20 ">
+    <motion.div 
+      style={{ opacity, y }} 
+      className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-hidden"
+    >
+      {/* Ring Container */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl aspect-[16/10] pointer-events-auto">
+        
+        {/* Subtle visual ring path */}
+        <div className="absolute inset-[12%] rounded-[50%] border border-green-500/10 pointer-events-none" />
 
-      <div className="absolute top-[8%] left-1/2 -translate-x-1/2 flex items-center gap-4 text-green-500 font-mono text-[10px] tracking-[0.3em] uppercase opacity-90 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]">
-        <span className="w-8 h-[1px] bg-green-500/50" />
-        Explore the Orizon Ecosystem
-        <span className="w-8 h-[1px] bg-green-500/50" />
-      </div>
+        {AGENCIES.map((agency, i) => {
+          // Math for perfect 8-card circular distribution
+          const angle = (i * 360) / 8; 
+          
+          // Add an offset of 22.5 degrees to prevent cards from clipping at the very top/bottom
+          const radians = ((angle - 90 + 22.5) * Math.PI) / 180;
+          
+          // Elliptical radius for a wide layout
+          const radiusX = 45; 
+          const radiusY = 38; 
+          
+          const x = Math.cos(radians) * radiusX;
+          const yPos = Math.sin(radians) * radiusY;
 
-      {EXPLORE_LINKS.map((link, i) => (
-        <div 
-          key={link.id} 
-          className={`absolute ${link.position} pointer-events-auto group`}
-        >
-          <div className={`w-[280px] bg-[#0a0a0a]/80 backdrop-blur-md border border-white/10 rounded-xl p-5 group-hover:border-green-500/40 transition-colors duration-500 z-10 relative`}>
-            
-            <div className={`flex items-center gap-3 ${link.align === "left" ? "flex-row" : "flex-row-reverse"}`}>
-              <h3 className="text-white text-xl font-sans font-medium tracking-wide">{link.title}</h3>
-              <svg className="w-4 h-4 text-green-500 shrink-0 group-hover:text-green-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-              </svg>
+          const { Flag } = agency;
+          
+          return (
+            <div
+              key={agency.id}
+              className="absolute group"
+              style={{
+                left: `calc(50% + ${x}%)`,
+                top: `calc(50% + ${yPos}%)`,
+                transform: "translate(-50%, -50%)",
+              }}
+            >
+              <div className="w-[260px] bg-bg p-4 border border-border magical-border-left rounded-md shadow-2xl backdrop-blur-md">
+                
+                {/* Header Row: Flag + Title */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 border border-white/10 opacity-90 group-hover:opacity-100 transition-opacity">
+                    <Flag className="w-full h-full object-cover" />
+                  </div>
+                  <h3 className="text-white text-lg font-sans font-medium tracking-wide">
+                    {agency.title}
+                  </h3>
+                </div>
+
+                {/* Two-line Description */}
+                <p className="text-sm text-gray-400 !leading-snug">
+                  {agency.desc}
+                </p>
+              </div>
             </div>
-
-            <p className={`text-gray-400 text-sm mt-1 font-sans ${link.align === "left" ? "text-left" : "text-right"}`}>
-              {link.desc}
-            </p>
-          </div>
-        </div>
-      ))}
-
-      <div className="absolute bottom-[8%] left-1/2 -translate-x-1/2 w-full text-center z-20">
-        <p className="text-gray-400 font-mono text-[10px] tracking-[0.3em] uppercase">
-          Scroll to dive in
-        </p>
+          );
+        })}
       </div>
-
     </motion.div>
   );
 }

@@ -9,14 +9,18 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sankyu/react-circle-flags": "^1.6.8",
     "framer-motion": "^14.4.0",
     "lenis": "^1.3.27",
     "next": "16.4.2",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-circle-flags": "^0.0.30",
+    "react-dom": "19.3.0",
+    "react-icons": "^5.7.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
+    "@types/country-flag-icons": "^1.2.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

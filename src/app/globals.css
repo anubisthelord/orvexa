@@ -1,14 +1,119 @@
 @import "tailwindcss";
 
+/* =========================================
+   TYPOGRAPHY SYSTEM
+   ========================================= */
+
 :root {
-  --background: #050505;
-  --foreground: #ededed;
+  /* Fonts */
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Type scale */
+  --text-xs: 0.75rem;       /* 12px */
+  --text-sm: 0.875rem;      /* 14px */
+  --text-base: 1rem;        /* 16px */
+  --text-lg: 1.125rem;      /* 18px */
+  --text-xl: 1.25rem;       /* 20px */
+  --text-2xl: 1.5rem;       /* 24px */
+  --text-3xl: 1.875rem;     /* 30px */
+  --text-4xl: 2.5rem;       /* 40px */
+  --text-5xl: 2.8rem;       /* 40px */
+
+  --text-display: clamp(3rem, 7vw, 6rem);
+  --text-section: clamp(2rem, 4.5vw, 3.5rem);
+
+  /* Line heights */
+  --leading-tight: 1.05;
+  --leading-heading: 1.15;
+  --leading-body: 1.7;
+
+  /* Letter spacing */
+  --tracking-tight: -0.045em;
+  --tracking-heading: -0.03em;
+  --tracking-normal: 0;
+  --tracking-label: 0.12em;
+
+  /* ==============================
+     NEW BRAND COLORS
+  ============================== */
+  /* Brand */
+  --color-brand: #31DE74;
+  --color-brand-hover: #25C866;
+  --color-brand-soft: #8CF5AE;
+  --color-brand-muted: #163B25;
+
+  /* Backgrounds */
+  --color-bg: #050807;
+  --color-bg-secondary: #090F0C;
+  --color-bg-tertiary: #0D1410;
+
+  /* Surfaces */
+  --color-surface: #101813;
+  --color-surface-hover: #17221A;
+  --color-surface-elevated: #1C2920;
+
+  /* Text */
+  --color-text-primary: #F1F5F2;
+  --color-text-secondary: #A0ADA4;
+  --color-text-muted: #748078;
+  --color-text-inverse: #050807;
+
+  /* Borders */
+  --color-border: #233129;
+  --color-border-subtle: #18231C;
+  --color-border-strong: #35483A;
+
+  /* Effects */
+  --color-glow: rgb(49 222 116 / 18%);
+  --color-overlay: rgb(0 0 0 / 65%);
+  --color-selection: rgb(49 222 116 / 25%);
+
+  /* Status */
+  --color-success: #31DE74;
+  --color-warning: #F5B942;
+  --color-error: #FF626E;
+  --color-info: #7CB7FF;
 }
 
+/* =========================================
+   TAILWIND THEME MAPPING
+   ========================================= */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  
+  /* Map Fonts */
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  /* Map Colors for Tailwind Utilities (e.g., bg-brand, text-primary) */
+  --color-brand: var(--color-brand);
+  --color-brand-hover: var(--color-brand-hover);
+  --color-brand-soft: var(--color-brand-soft);
+  --color-brand-muted: var(--color-brand-muted);
+
+  --color-bg: var(--color-bg);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-surface-elevated: var(--color-surface-elevated);
+
+  --color-primary: var(--color-text-primary);
+  --color-secondary: var(--color-text-secondary);
+  --color-muted: var(--color-text-muted);
+  --color-inverse: var(--color-text-inverse);
+
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+
+  /* Animations */
   --animate-twinkle: twinkle 4s ease-in-out infinite;
 
   @keyframes twinkle {
@@ -17,15 +122,206 @@
   }
 }
 
+/* =========================================
+   BASE TYPOGRAPHY & STYLES
+   ========================================= */
+
+html {
+  font-family: var(--font-body);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 400;
+  line-height: var(--leading-body);
   overflow-x: hidden;
+}
+
+/* Selection Color */
+::selection {
+  background-color: var(--color-selection);
+  color: var(--color-text-primary);
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  color: var(--color-text-primary);
+}
+
+h1 {
+  font-size: var(--text-display);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 500;
+}
+
+h2 {
+  font-size: var(--text-5xl);
+    line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+}
+
+h3 {
+  font-size: var(--text-xl);
+  line-height: 1.55;
+}
+
+h4 {
+  font-size: var(--text-lg);
+  line-height: 1.1;
+}
+
+/* Paragraphs */
+p {
+  line-height: var(--leading-body);
+  color: var(--color-text-secondary); /* Default p tags to secondary text */
+}
+
+/* Form and interactive typography */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Technical labels */
+.font-mono,
+code,
+pre,
+[data-font="mono"] {
+  font-family: var(--font-mono);
+}
+
+/* Small uppercase section labels */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+
+/* Responsive refinement */
+@media (max-width: 640px) {
+  :root {
+    --text-display: clamp(2.625rem, 11vw, 3.625rem);
+    --text-section: clamp(1.875rem, 8vw, 2.5rem);
+    --tracking-tight: -0.035em;
+  }
 }
 
 /* Hide scrollbar for immersive feel */
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
+}
+
+
+@layer utilities {
+  /* Base wrapper */
+  .magical-border-right,
+  .magical-border-left {
+    position: relative;
+  }
+
+  /* === RIGHT SIDE === */
+  .magical-border-right::after {
+    content: "" !important;
+    display: block;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 5%;
+    bottom: 5%;
+    width: 2px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(85, 255, 85, 0.5) 20%,
+      rgba(85, 255, 85, 0.8) 50%,
+      rgba(85, 255, 85, 0.5) 80%,
+      transparent
+    );
+    box-shadow: 0 0 15px rgba(85, 255, 85, 0.4);
+    z-index: 10;
+  }
+
+  .magical-border-right::before {
+    content: "" !important;
+    display: block;
+    pointer-events: none;
+    position: absolute;
+    right: -2.5px;
+    top: 5%;
+    bottom: 5%;
+    width: 7px;
+    background-image: url("data:image/svg+xml,%3Csvg width='7' height='40' viewBox='0 0 7 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='3.5' cy='20' r='1.5' fill='%2355ff55' fill-opacity='0.8'/%3E%3Ccircle cx='3.5' cy='2' r='0.5' fill='%23ffffff' fill-opacity='0.6'/%3E%3Ccircle cx='3.5' cy='38' r='0.5' fill='%23ffffff' fill-opacity='0.6'/%3E%3C/svg%3E");
+    background-size: 7px 80px;
+    background-repeat: repeat-y;
+    z-index: 11;
+    animation: magic-float 3s linear infinite;
+  }
+
+  /* === LEFT SIDE === */
+  .magical-border-left::after {
+    content: "" !important;
+    display: block;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 5%;
+    bottom: 5%;
+    width: 2px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(85, 255, 85, 0.5) 20%,
+      rgba(85, 255, 85, 0.8) 50%,
+      rgba(85, 255, 85, 0.5) 80%,
+      transparent
+    );
+    box-shadow: 0 0 15px rgba(85, 255, 85, 0.4);
+    z-index: 10;
+  }
+
+  .magical-border-left::before {
+    content: "" !important;
+    display: block;
+    pointer-events: none;
+    position: absolute;
+    left: -2.5px;
+    top: 5%;
+    bottom: 5%;
+    width: 7px;
+    background-image: url("data:image/svg+xml,%3Csvg width='7' height='40' viewBox='0 0 7 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='3.5' cy='20' r='1.5' fill='%2355ff55' fill-opacity='0.8'/%3E%3Ccircle cx='3.5' cy='2' r='0.5' fill='%23ffffff' fill-opacity='0.6'/%3E%3Ccircle cx='3.5' cy='38' r='0.5' fill='%23ffffff' fill-opacity='0.6'/%3E%3C/svg%3E");
+    background-size: 7px 80px;
+    background-repeat: repeat-y;
+    z-index: 11;
+    animation: magic-float 3s linear infinite;
+  }
+
+  /* Float Animation */
+  @keyframes magic-float {
+    0% { background-position-y: 0; }
+    100% { background-position-y: -80px; }
+  }
 }

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, MotionValue, useTransform } from "framer-motion";
+import SectionHeading from "@/components/shared/molecules/SectionHeading";
 
 interface OneCoreSectionProps {
   scrollProgress: MotionValue<number>;
@@ -23,28 +24,30 @@ const x = useTransform(scrollProgress, [0.42, 0.48, 0.53, 0.56], [-50, 0, 0, -50
         CONTENT WRAPPER 
         Occupies the left half of the screen, with left padding to align with the menu.
       */}
-      <div className="w-full md:w-1/2 pl-[12%] md:pl-[15%] lg:pl-[18%] flex flex-col items-start pr-8">
+      <div className="w-full container mx-auto ">
         
-        {/* Top Subtitle */}
-        <div className="flex items-center gap-4 text-green-500 font-mono text-[10px] tracking-[0.3em] uppercase opacity-90 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)] mb-6">
-          <span className="w-8 h-[1px] bg-green-500/50" />
-          One ecosystem, not six contracts
-        </div>
+      
 
-        {/* Main Heading */}
-        <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-sans font-medium tracking-tight leading-[1.1] mb-6 drop-shadow-2xl">
-          Every layer of defence,<br />
-          <span className="text-[#55ff55] font-bold drop-shadow-[0_0_15px_rgba(85,255,85,0.3)]">
-            pulled into one core.
-          </span>
-        </h1>
 
-        {/* Paragraph Description */}
-        <p className="text-gray-400 text-sm md:text-base lg:text-lg leading-relaxed max-w-lg font-sans">
-          Discover, test, protect, detect, respond — one integrated, 
-          sovereign European security lifecycle. Not six vendors that 
-          never talk to each other.
-        </p>
+        
+        
+        <SectionHeading
+          label="One Ecosystem, No Fixed Contracts"
+          title={
+            <>
+                 Every layer of defence,
+              <br className="hidden sm:block" />
+              {" "} <span className="text-[#6bef1a]">  Pulled into one core.</span>
+            </>
+          }
+       description="Discover, test, protect, detect, and respond — one integrated, sovereign European security lifecycle. Instead of managing six different vendors that never talk to each other, Orizon brings every critical layer of your defense into a single, unified platform. Eliminate blind spots, reduce complexity, and secure your entire attack surface."
+          descriptionWidth="2xl"
+          level={2}
+          align="left"
+          className="mb-10 sm:mb-12 magical-border-left pl-8"
+        />
+
+       
 
       </div>
     </motion.div>

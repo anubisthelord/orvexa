@@ -14,10 +14,10 @@ import ComparisonSection from "@/components/organism/sections/ComparisonSection"
 import ServicesSection from "@/components/organism/sections/ServicesSection";
 import ExploreSection from "@/components/organism/sections/ExploreSection";
 import EmptyDiveSection from "@/components/organism/sections/EmptyDiveSection";
-import ServicesGridSection from "@/components/organism/sections/simple/ServicesGridSection";
+import ServicesGridSection from "@/components/organism/sections/home/ServicesGridSection";
 import NIS2Section from "@/components/organism/sections/simple/NIS2Section";
-import ProcessStepsSection from "@/components/organism/sections/simple/ProcessStepsSection";
-import WhyChooseOrizon from "@/components/organism/sections/simple/WhyChooseOrizon";
+import ProcessStepsSection from "@/components/organism/sections/home/ProcessStepsSection";
+import WhyChooseOrizon from "@/components/organism/sections/home/WhyChooseOrizon";
 import InsightsSection from "@/components/organism/sections/simple/InsightsSection";
 
 
@@ -103,7 +103,7 @@ export default function Home() {
       </motion.div>
 
       {/* --- UI OVERLAYS (z-100) --- */}
-      <div className="fixed inset-0 z-[100] pointer-events-none">
+      <div className="fixed inset-0 z-[100] pointer-events-none hidden">
         <SideNavigation sections={SECTIONS} activeIndex={activeIndex} />
         <BottomHUD stageText={SECTIONS[activeIndex].stage} progressValue={progressValue} />
       </div>
@@ -127,6 +127,8 @@ export default function Home() {
         <ProcessStepsSection />
         <InsightsSection />
       </div>
+
+      
 
     </main>
   );

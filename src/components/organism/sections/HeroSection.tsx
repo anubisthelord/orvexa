@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, MotionValue, useTransform } from "framer-motion";
+import Button from "@/components/shared/atoms/Button";
 
 interface HeroSectionProps {
   scrollProgress: MotionValue<number>;
@@ -64,27 +65,23 @@ export default function HeroSection({ scrollProgress }: HeroSectionProps) {
       </h1>
 
       {/* Subdescription */}
-      <p className="relative z-10 max-w-xl text-gray-300 text-sm md:text-lg leading-snug mb-10 font-sans drop-shadow-md">
+      <p className="relative z-10 max-w-3xl text-gray-300 text-sm md:text-lg !leading-snug mb-10 drop-shadow-md">
         Six integrated orbital technologies working in unison to chart unknown sectors, 
         monitor stellar phenomena, power deep space telemetry, and secure your mission.
       </p>
 
       {/* Call to Action Buttons */}
       <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4">
-        {/* Primary Button */}
-        <button className="group relative px-8 py-3.5 bg-[#55ff55] text-black font-mono text-[11px] font-bold tracking-widest uppercase rounded-full hover:bg-[#44dd44] transition-all duration-300 overflow-hidden pointer-events-auto">
-          <span className="relative z-10 flex items-center gap-2">
-            Launch Mission
-            <svg className="w-3 h-3 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-            </svg>
-          </span>
-        </button>
+       
 
-        {/* Secondary Button */}
-        <button className="px-8 py-3.5 bg-transparent border border-gray-400/30 text-white font-mono text-[11px] tracking-widest uppercase rounded-full hover:bg-white/10 hover:border-gray-300 transition-all duration-300 pointer-events-auto">
-          Contact Mission Control
-        </button>
+        <Button variant="primary" size="md" >
+        Launch Mission
+        </Button>
+
+        <Button variant="secondary" size="md" className="backdrop-blur-sm" >
+        Contact Mission Control
+        </Button>
+      
       </div>
 
     </motion.div>

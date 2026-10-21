@@ -150,17 +150,6 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
     return { baseWidth, opacity, thickness };
   });
 
-  // Per-ring mask: darkens the TOP and BOTTOM arc of each ring,
-  // leaving the left/right sides (3 o'clock and 9 o'clock) bright.
-  const ringMask =
-    "linear-gradient(to bottom, " +
-    "rgba(0,0,0,0.15) 0%, " +
-    "rgba(0,0,0,0.35) 12%, " +
-    "rgba(0,0,0,1) 35%, " +
-    "rgba(0,0,0,1) 65%, " +
-    "rgba(0,0,0,0.35) 88%, " +
-    "rgba(0,0,0,0.15) 100%)";
-
   return (
     <div className="fixed top-0 left-0 w-full h-screen overflow-hidden bg-[#050505] z-0">
       {showStars && <Starfield3D opacity={starsOpacity} />}
@@ -173,7 +162,19 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
           // FIX: Typed the array parameters as numbers
           scale: useTransform([ringScaleOverride, baseRingScale], ([override, base]: number[]) => override * base),
           transformOrigin: "center center",
-          willChange: "transform"
+          willChange: "transform",
+          // Fade the rings near the top-center and bottom-center.
+          // Rings stay crisp on the sides and horizontal middle.
+          WebkitMaskImage:
+            "radial-gradient(ellipse 55% 45% at 50% 0%, transparent 0%, black 60%), " +
+            "radial-gradient(ellipse 55% 45% at 50% 100%, transparent 0%, black 60%), " +
+            "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 75%, rgba(0,0,0,0.35) 100%)",
+          maskImage:
+            "radial-gradient(ellipse 55% 45% at 50% 0%, transparent 0%, black 60%), " +
+            "radial-gradient(ellipse 55% 45% at 50% 100%, transparent 0%, black 60%), " +
+            "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 75%, rgba(0,0,0,0.35) 100%)",
+          WebkitMaskComposite: "source-in",
+          maskComposite: "intersect",
         }}
       >
         {rings.map((ring, index) => (
@@ -184,10 +185,7 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
               width: `${ring.baseWidth}vw`,
               opacity: ring.opacity,
               borderWidth: `${ring.thickness}px`,
-              willChange: "transform, opacity",
-              // Fade the top and bottom arc of THIS ring only
-              WebkitMaskImage: ringMask,
-              maskImage: ringMask,
+              willChange: "transform, opacity"
             }}
           />
         ))}

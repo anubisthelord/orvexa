@@ -8,7 +8,6 @@ interface ComparisonSectionProps {
   scrollProgress: MotionValue<number>;
 }
 
-// 1. Strict Type for Data
 type TableRow = {
   dimension: string;
   orizon: string;
@@ -17,7 +16,6 @@ type TableRow = {
   highlight?: boolean;
 };
 
-// 2. Static Data Outside Component
 const TABLE_DATA: TableRow[] = [
   { dimension: "Coverage", orizon: "All six services", vendors: "One tool each", inhouse: "Build each" },
   { dimension: "Entry cost", orizon: "from €90", vendors: "€15-50K / tool", inhouse: "€1M+ /yr", highlight: true },
@@ -33,7 +31,6 @@ const COLUMNS = [
   { id: "inhouse", label: "In-house build", isHighlighted: false },
 ] as const;
 
-// 3. Extracted Icons to match WhyChooseOrizon
 const CheckIcon = () => (
   <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -52,7 +49,6 @@ const DashIcon = () => (
   </div>
 );
 
-// 4. Cell Renderer
 const CheckCell = ({ value, isHighlighted }: { value: string; isHighlighted?: boolean }) => {
   if (value === "check") {
     return (
@@ -75,7 +71,7 @@ const CheckCell = ({ value, isHighlighted }: { value: string; isHighlighted?: bo
       </div>
     );
   }
-  
+
   return (
     <span
       className={`font-sans text-sm ${
@@ -90,23 +86,29 @@ const CheckCell = ({ value, isHighlighted }: { value: string; isHighlighted?: bo
 };
 
 export default function ComparisonSection({ scrollProgress }: ComparisonSectionProps) {
-  const opacity = useTransform(scrollProgress, [0.70, 0.75, 0.83, 0.85], [0, 1, 1, 0]);
-  const y = useTransform(scrollProgress, [0.70, 0.75, 0.83, 0.85], [50, 0, 0, -50]);
+  // Overlaps with ExploreSection: holds until 0.90, then slides up and out by 0.96
+  const y = useTransform(
+    scrollProgress,
+    [0.82, 0.86, 0.90, 0.96],
+    ["100vh", "0vh", "0vh", "-100vh"]
+  );
+
+  // Fades in at start, holds at 1, only fades out at the very tail end of the slide
+  const opacity = useTransform(scrollProgress, [0.82, 0.84, 0.94, 0.96], [0, 1, 1, 0]);
 
   return (
     <motion.div
-      style={{ opacity, y }}
+      style={{ y, opacity }}
       className="absolute inset-0 w-full h-full pointer-events-none z-20 flex items-center justify-end pr-[10%]"
     >
-<div className="w-full max-w-4xl flex flex-col items-start pr-8 magical-border-right">
-        
+      <div className="w-full max-w-4xl flex flex-col items-start pr-8 magical-border-right">
         <SectionHeading
           label="THE COMPARISON"
           title={
             <>
               Full coverage.
-              <br className="hidden sm:block" />
-              {" "} <span className="text-[#6bef1a]">One sovereign platform.</span>
+              <br className="hidden sm:block" />{" "}
+              <span className="text-[#6bef1a]">One sovereign platform.</span>
             </>
           }
           level={2}
@@ -114,17 +116,14 @@ export default function ComparisonSection({ scrollProgress }: ComparisonSectionP
           className="mb-10 sm:mb-12"
         />
 
-        {/* Same container styling as WhyChooseOrizon */}
         <div className="w-full bg-[#0a0a0a] border border-white/10 rounded-md overflow-hidden pointer-events-auto">
           <table className="w-full text-center border-collapse">
-            
-            {/* Table Header */}
             <thead className="bg-white/5 border-b border-white/10">
               <tr>
                 <th className="p-4 text-left !font-normal text-gray-400 text-sm">Dimension</th>
                 {COLUMNS.map((col) => (
-                  <th 
-                    key={col.id} 
+                  <th
+                    key={col.id}
                     className={`p-4 font-normal text-sm ${
                       col.isHighlighted ? "text-green-500" : "text-gray-300"
                     }`}
@@ -135,32 +134,29 @@ export default function ComparisonSection({ scrollProgress }: ComparisonSectionP
               </tr>
             </thead>
 
-            {/* Table Body */}
             <tbody>
               {TABLE_DATA.map((row, i) => (
-                <tr 
-                  key={i} 
+                <tr
+                  key={i}
                   className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors"
                 >
-                  {/* Dimension Name */}
                   <td className="p-4 text-left text-sm text-gray-300 font-medium">
                     {row.dimension}
                   </td>
 
-                  {/* Dynamic Columns */}
                   {COLUMNS.map((col) => (
-                    <td 
-                      key={col.id} 
+                    <td
+                      key={col.id}
                       className={`p-4 ${
-                        col.isHighlighted 
-                          ? "bg-green-500/5 border-x border-green-500/10" 
+                        col.isHighlighted
+                          ? "bg-green-500/5 border-x border-green-500/10"
                           : "border-r border-white/5 last:border-r-0"
                       }`}
                     >
                       <div className="flex justify-center items-center">
-                        <CheckCell 
-                          value={row[col.id as keyof TableRow] as string} 
-                          isHighlighted={col.isHighlighted && row.highlight} 
+                        <CheckCell
+                          value={row[col.id as keyof TableRow] as string}
+                          isHighlighted={col.isHighlighted && row.highlight}
                         />
                       </div>
                     </td>
@@ -170,7 +166,6 @@ export default function ComparisonSection({ scrollProgress }: ComparisonSectionP
             </tbody>
           </table>
         </div>
-
       </div>
     </motion.div>
   );

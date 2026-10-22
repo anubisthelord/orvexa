@@ -1,8 +1,5 @@
 "use client";
-
-import React from "react";
-import { motion, MotionValue, useTransform, useSpring } from "framer-motion";
-import Starfield3D from "./sections/simple/Starfield3D";
+import { motion, MotionValue, useTransform } from "framer-motion";
 
 export type BlackHolePosition = 
   | "center" 
@@ -18,14 +15,15 @@ export interface BlackHoleSectionConfig {
   position?: BlackHolePosition; 
   preserveSize?: boolean; 
   showStars?: boolean;
-  /** Control ring scale independently. */
   ringScale?: number;
+  hold?: number;
+  snapDuration?: number;
+  noTop?: boolean;
 }
 
 interface BlackHoleProps {
   scrollProgress: MotionValue<number>;
   sections?: BlackHoleSectionConfig[];
-  showStars?: boolean;
 }
 
 const POSITION_MAP: Record<BlackHolePosition, { x: number; y: number }> = {
@@ -38,64 +36,77 @@ const POSITION_MAP: Record<BlackHolePosition, { x: number; y: number }> = {
   "center-left":  { x: -25, y: 0 },
 };
 
-export default function BlackHole({ scrollProgress, sections = [], showStars = true }: BlackHoleProps) {
+function resolveScale(s: BlackHoleSectionConfig): number {
+  if (s.preserveSize) return 1;
+  if (s.scale !== undefined) return s.scale;
+  if (s.maxScale !== undefined) return s.maxScale;
+  if (s.minScale !== undefined) return s.minScale;
+  return 1;
+}
+
+export default function BlackHole({ scrollProgress, sections = [] }: BlackHoleProps) {
   const baseVideoScale = useTransform(scrollProgress, [0, 0.5], [1.25, 0.8125]);
   const baseRingScale = useTransform(scrollProgress, [0, 0.5], [1, 1.25]);
 
   const totalSections = Math.max(...sections.map(s => s.section), 1) + 1;
   const sortedSections = [...sections].sort((a, b) => a.section - b.section);
 
+  // Seed ALL outputs from section 0 so its config is honored on frame one.
+  const first = sortedSections[0];
+  const firstPos = POSITION_MAP[first?.position || "center"];
+
   const inputRange: number[] = [0];
-  const xOutput: number[] = [POSITION_MAP["center"].x];
-  const yOutput: number[] = [POSITION_MAP["center"].y];
-  const scaleOverrideOutput: number[] = [1]; 
-  const starsOpacityOutput: number[] = [showStars ? 1 : 0];
-  const ringScaleOutput: number[] = [1]; 
+  const xOutput: number[] = [firstPos.x];
+  const yOutput: number[] = [firstPos.y];
+  const scaleOverrideOutput: number[] = [first ? resolveScale(first) : 1];
+  const ringScaleOutput: number[] = [first?.ringScale ?? 1];
 
   sortedSections.forEach((s, index) => {
-    const progress = s.section / (totalSections - 1);
+    const sectionStart = s.section / (totalSections - 1);
+    const sectionEnd = index < sortedSections.length - 1 
+      ? sortedSections[index + 1].section / (totalSections - 1)
+      : 1;
+    
+    const window = sectionEnd - sectionStart;
+    const hold = s.hold ?? 0.65; 
+    const snapDuration = s.snapDuration ?? 0.04;
 
-    const currentStars = s.showStars !== undefined ? (s.showStars ? 1 : 0) : (showStars ? 1 : 0);
-    const prevStars = index > 0 
-      ? (sortedSections[index - 1].showStars !== undefined ? (sortedSections[index - 1].showStars ? 1 : 0) : (showStars ? 1 : 0))
-      : (showStars ? 1 : 0);
+    const holdEnd = sectionStart + window * hold;
+    const snapEnd = Math.min(holdEnd + snapDuration, sectionEnd);
 
-    if (prevStars === 1 && currentStars === 0 && inputRange[inputRange.length - 1] !== progress) {
-      const fadeStartProgress = progress - 0.06; 
-      if (fadeStartProgress > inputRange[inputRange.length - 1]) {
-        inputRange.push(fadeStartProgress);
-        xOutput.push(xOutput[xOutput.length - 1]);
-        yOutput.push(yOutput[yOutput.length - 1]);
-        scaleOverrideOutput.push(scaleOverrideOutput[scaleOverrideOutput.length - 1]);
-        starsOpacityOutput.push(1); 
-        ringScaleOutput.push(ringScaleOutput[ringScaleOutput.length - 1]); 
-      }
+    const pos = POSITION_MAP[s.position || "center"];
+    const scale = resolveScale(s);
+    const ring = s.ringScale ?? 1;
+
+    if (inputRange[inputRange.length - 1] !== sectionStart) {
+      inputRange.push(sectionStart);
+      xOutput.push(pos.x);
+      yOutput.push(pos.y);
+      scaleOverrideOutput.push(scale);
+      ringScaleOutput.push(ring);
     }
 
-    if (inputRange[inputRange.length - 1] !== progress) {
-      const pos = s.position || "center";
-      const mappedPos = POSITION_MAP[pos];
+    if (holdEnd > sectionStart && inputRange[inputRange.length - 1] !== holdEnd) {
+      inputRange.push(holdEnd);
+      xOutput.push(pos.x);
+      yOutput.push(pos.y);
+      scaleOverrideOutput.push(scale);
+      ringScaleOutput.push(ring);
+    }
 
-      inputRange.push(progress);
-      xOutput.push(mappedPos.x);
-      yOutput.push(mappedPos.y);
-      
-      if (s.preserveSize) {
-        scaleOverrideOutput.push(1); 
-      } else if (s.scale !== undefined) {
-        scaleOverrideOutput.push(s.scale);
-      } else if (s.minScale !== undefined && s.maxScale !== undefined) {
-        scaleOverrideOutput.push(s.maxScale);
-      } else if (s.maxScale !== undefined) {
-        scaleOverrideOutput.push(s.maxScale);
-      } else if (s.minScale !== undefined) {
-        scaleOverrideOutput.push(s.minScale);
-      } else {
-        scaleOverrideOutput.push(1);
+    if (snapDuration > 0 && index < sortedSections.length - 1 && snapEnd > holdEnd) {
+      const next = sortedSections[index + 1];
+      const nextPos = POSITION_MAP[next.position || "center"];
+      const nextScale = resolveScale(next);
+      const nextRing = next.ringScale ?? 1;
+
+      if (inputRange[inputRange.length - 1] !== snapEnd) {
+        inputRange.push(snapEnd);
+        xOutput.push(nextPos.x);
+        yOutput.push(nextPos.y);
+        scaleOverrideOutput.push(nextScale);
+        ringScaleOutput.push(nextRing);
       }
-
-      ringScaleOutput.push(s.ringScale !== undefined ? s.ringScale : 1);
-      starsOpacityOutput.push(currentStars);
     }
   });
 
@@ -104,7 +115,6 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
     xOutput.push(xOutput[xOutput.length - 1]);
     yOutput.push(yOutput[yOutput.length - 1]);
     scaleOverrideOutput.push(scaleOverrideOutput[scaleOverrideOutput.length - 1]);
-    starsOpacityOutput.push(starsOpacityOutput[starsOpacityOutput.length - 1]);
     ringScaleOutput.push(ringScaleOutput[ringScaleOutput.length - 1]); 
   }
 
@@ -112,7 +122,6 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
   const dedupX: number[] = [];
   const dedupY: number[] = [];
   const dedupScale: number[] = [];
-  const dedupStars: number[] = [];
   const dedupRingScale: number[] = []; 
 
   for (let i = 0; i < inputRange.length; i++) {
@@ -121,27 +130,43 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
       dedupX.push(xOutput[i]);
       dedupY.push(yOutput[i]);
       dedupScale.push(scaleOverrideOutput[i]);
-      dedupStars.push(starsOpacityOutput[i]);
       dedupRingScale.push(ringScaleOutput[i]); 
     } else {
       dedupX[dedupX.length - 1] = xOutput[i];
       dedupY[dedupY.length - 1] = yOutput[i];
       dedupScale[dedupScale.length - 1] = scaleOverrideOutput[i];
-      dedupStars[dedupStars.length - 1] = starsOpacityOutput[i];
       dedupRingScale[dedupRingScale.length - 1] = ringScaleOutput[i]; 
     }
   }
 
   const sectionX = useTransform(scrollProgress, dedupInput, dedupX);
   const sectionY = useTransform(scrollProgress, dedupInput, dedupY);
-  const rawWrapperScale = useTransform(scrollProgress, dedupInput, dedupScale);
-  const finalWrapperScale = useSpring(rawWrapperScale, { stiffness: 80, damping: 20 });  
-  
-  const rawStarsOpacity = useTransform(scrollProgress, dedupInput, dedupStars);
-  const starsOpacity = useSpring(rawStarsOpacity, { stiffness: 80, damping: 20 });
+  const scale = useTransform(scrollProgress, dedupInput, dedupScale);
+  const ringScaleOverride = useTransform(scrollProgress, dedupInput, dedupRingScale);
 
-  const rawRingScaleOverride = useTransform(scrollProgress, dedupInput, dedupRingScale);
-  const ringScaleOverride = useSpring(rawRingScaleOverride, { stiffness: 80, damping: 20 });
+  // --- noTop: a true discrete step keyed ONLY on section boundaries ---
+  // Never lerped. Switches hard at each section start.
+  const noTopInput: number[] = [];
+  const noTopStep: number[] = [];
+  sortedSections.forEach((s) => {
+    const start = s.section / (totalSections - 1);
+    if (noTopInput.length === 0 || noTopInput[noTopInput.length - 1] !== start) {
+      noTopInput.push(start);
+      noTopStep.push(s.noTop ? 1 : 0);
+    }
+  });
+  if (noTopInput[noTopInput.length - 1] < 1) {
+    noTopInput.push(1);
+    noTopStep.push(noTopStep[noTopStep.length - 1]);
+  }
+
+  const isNoTop = useTransform(scrollProgress, noTopInput, noTopStep);
+
+  // Force Y to 0 whenever the active section is noTop.
+  // Round to boolean: prevents the fractional-equality bug.
+  const finalSectionY = useTransform([sectionY, isNoTop], ([y, noTop]) => {
+    return (noTop as number) >= 0.5 ? 0 : (y as number);
+  });
 
   const rings = Array.from({ length: 20 }).map((_, i) => {
     const baseWidth = 15 + i * 8.5; 
@@ -151,20 +176,15 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
   });
 
   return (
-    <div className="fixed top-0 left-0 w-full h-screen overflow-hidden bg-[#050505] z-0">
-      {showStars && <Starfield3D opacity={starsOpacity} />}
-
+    <div className="absolute inset-0 w-full h-full bg-transparent pointer-events-none z-0">
       <motion.div 
-        className="absolute inset-0 flex items-center justify-center w-full h-full pointer-events-none z-20"
+        className="absolute inset-0 flex items-center justify-center w-full h-full pointer-events-none"
         style={{
           x: useTransform(sectionX, (v) => `${v}vw`),
-          y: useTransform(sectionY, (v) => `${v}vh`),
-          // FIX: Typed the array parameters as numbers
+          y: useTransform(finalSectionY, (v) => `${v}vh`),
           scale: useTransform([ringScaleOverride, baseRingScale], ([override, base]: number[]) => override * base),
           transformOrigin: "center center",
           willChange: "transform",
-          // Fade the rings near the top-center and bottom-center.
-          // Rings stay crisp on the sides and horizontal middle.
           WebkitMaskImage:
             "radial-gradient(ellipse 55% 45% at 50% 0%, transparent 0%, black 60%), " +
             "radial-gradient(ellipse 55% 45% at 50% 100%, transparent 0%, black 60%), " +
@@ -192,11 +212,11 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
       </motion.div>
 
       <motion.div 
-        className="absolute inset-0 flex items-center justify-center w-full h-full pointer-events-none z-30"
+        className="absolute inset-0 flex items-center justify-center w-full h-full pointer-events-none"
         style={{
           x: useTransform(sectionX, (v) => `${v}vw`),
-          y: useTransform(sectionY, (v) => `${v}vh`),
-          scale: finalWrapperScale, 
+          y: useTransform(finalSectionY, (v) => `${v}vh`),
+          scale: scale, 
           transformOrigin: "center center",
           willChange: "transform"
         }}
@@ -214,7 +234,6 @@ export default function BlackHole({ scrollProgress, sections = [], showStars = t
           </video>
         </motion.div>
       </motion.div>
-
     </div>
   );
 }

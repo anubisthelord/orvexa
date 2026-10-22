@@ -3,14 +3,7 @@
 import React from "react";
 import { motion, MotionValue, useTransform } from "framer-motion";
 import {
-  FlagUs,
-  FlagEu,
-  FlagIn,
-  FlagJp,
-  FlagCn,
-  FlagRu,
-  FlagCa,
-  FlagGb,
+  FlagUs, FlagEu, FlagIn, FlagJp, FlagCn, FlagRu, FlagCa, FlagGb,
 } from "@sankyu/react-circle-flags";
 
 interface ExploreSectionProps {
@@ -29,36 +22,35 @@ const AGENCIES = [
 ];
 
 export default function ExploreSection({ scrollProgress }: ExploreSectionProps) {
-  const opacity = useTransform(scrollProgress, [0.85, 0.90, 1, 1], [0, 1, 1, 1]);
-  const y = useTransform(scrollProgress, [0.85, 0.90, 1, 1], [50, 0, 0, 0]);
+  // Starts at 0.94 (overlapping Comparison exit), fully centers at 0.98, and holds to 1.0
+  const y = useTransform(
+    scrollProgress,
+    [0.94, 0.98, 1.0],
+    ["100vh", "0vh", "0vh"]
+  );
+
+  // Fade in nicely as it slides up
+  const opacity = useTransform(scrollProgress, [0.94, 0.97], [0, 1]);
 
   return (
-    <motion.div 
-      style={{ opacity, y }} 
-      className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-hidden"
+    <motion.div
+      style={{ y, opacity }}
+      className="absolute inset-0 w-full h-full pointer-events-none z-50 overflow-hidden"
     >
-      {/* Ring Container */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl aspect-[16/10] pointer-events-auto">
-        
-        {/* Subtle visual ring path */}
         <div className="absolute inset-[12%] rounded-[50%] border border-green-500/10 pointer-events-none" />
 
         {AGENCIES.map((agency, i) => {
-          // Math for perfect 8-card circular distribution
-          const angle = (i * 360) / 8; 
-          
-          // Add an offset of 22.5 degrees to prevent cards from clipping at the very top/bottom
+          const angle = (i * 360) / 8;
           const radians = ((angle - 90 + 22.5) * Math.PI) / 180;
-          
-          // Elliptical radius for a wide layout
-          const radiusX = 45; 
-          const radiusY = 38; 
-          
+          const radiusX = 45;
+          const radiusY = 38;
+
           const x = Math.cos(radians) * radiusX;
           const yPos = Math.sin(radians) * radiusY;
 
           const { Flag } = agency;
-          
+
           return (
             <div
               key={agency.id}
@@ -69,9 +61,7 @@ export default function ExploreSection({ scrollProgress }: ExploreSectionProps) 
                 transform: "translate(-50%, -50%)",
               }}
             >
-              <div className="w-[260px] bg-bg p-4 border border-border magical-border-left rounded-md shadow-2xl backdrop-blur-md">
-                
-                {/* Header Row: Flag + Title */}
+              <div className="w-[260px] bg-[#0a0a0a] p-4 border border-white/10 magical-border-left rounded-md shadow-[0_0_30px_rgba(0,0,0,0.8)]">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 border border-white/10 opacity-90 group-hover:opacity-100 transition-opacity">
                     <Flag className="w-full h-full object-cover" />
@@ -80,8 +70,6 @@ export default function ExploreSection({ scrollProgress }: ExploreSectionProps) 
                     {agency.title}
                   </h3>
                 </div>
-
-                {/* Two-line Description */}
                 <p className="text-sm text-gray-400 !leading-snug">
                   {agency.desc}
                 </p>

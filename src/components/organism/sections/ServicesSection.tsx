@@ -42,11 +42,12 @@ const SERVICES = [
 ];
 
 export default function ServicesSection({ scrollProgress }: ServicesSectionProps) {
-  // Fades in early, fades out before Comparison
-  const opacity = useTransform(scrollProgress, [0.55, 0.60, 0.68, 0.70], [0, 1, 1, 0]);
-  const y = useTransform(scrollProgress, [0.55, 0.60, 0.68, 0.70], [50, 0, 0, -50]);
+// Inside ServicesSection.tsx, find and update these two lines:
+const opacity = useTransform(scrollProgress, [0.68, 0.72, 0.80, 0.82], [0, 1, 1, 0]);
+const y = useTransform(scrollProgress, [0.68, 0.72, 0.80, 0.82], [50, 0, 0, -50]);
 
-  const rawRingScale = useTransform(scrollProgress, [0.55, 0.68], [0.8, 1.2]);
+// Also update the ring scale:
+const rawRingScale = useTransform(scrollProgress, [0.68, 0.80], [0.8, 1.2]);
   const ringScale = useSpring(rawRingScale, { stiffness: 80, damping: 20 });
 
   return (

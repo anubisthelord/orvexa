@@ -1,14 +1,12 @@
 "use client";
 
-import React from "react";
 
 export default function EmptyDiveSection() {
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none">
+    <div className="absolute inset-0 w-full h-[12vh] pointer-events-none">
       {/* 
-        This section is intentionally empty. 
-        The BlackHole component will scale up to 7x in the background 
-        while this section is active.
+        Intentionally empty. This gives the BlackHole space to 
+        scale up completely without text overlapping it.
       */}
     </div>
   );
